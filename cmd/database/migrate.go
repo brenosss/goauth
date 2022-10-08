@@ -2,9 +2,16 @@ package main
 
 import (
 	db "backend/pkg/database"
+	"log"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	db.ApplyMigrations()
 	/*
 		conn.Exec("INSERT INTO users (name) VALUES ('breno')")

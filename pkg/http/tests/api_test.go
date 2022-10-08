@@ -1,13 +1,20 @@
 package http
 
 import (
+	"backend/pkg/config"
 	http "backend/pkg/http"
 	netHttp "net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMain(m *testing.M) {
+	config.LoadEnv("test")
+	os.Exit(m.Run())
+}
 
 func TestAuthenticationMiddleware(t *testing.T) {
 	t.Run("UserIsAuthenticated", func(t *testing.T) {

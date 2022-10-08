@@ -1,6 +1,7 @@
 package database
 
 import (
+	"backend/pkg/config"
 	"database/sql"
 	"embed"
 	"fmt"
@@ -49,7 +50,7 @@ func ApplyMigrations() {
 }
 
 func GetConnection() *sql.DB {
-	db, err := sql.Open("sqlite3", "./test.db")
+	db, err := sql.Open("sqlite3", "./sqlite/"+config.GetConfig().DatabaseName)
 	if err != nil {
 		panic(err)
 	}
