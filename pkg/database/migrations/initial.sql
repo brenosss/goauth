@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, email TEXT, password TEXT, created_at DATETIME, updated_at DATETIME);
+CREATE TABLE IF NOT EXISTS tokens (id INTEGER PRIMARY KEY, user_id INTEGER, token TEXT, created_at DATETIME, updated_at DATETIME, FOREIGN KEY(user_id) REFERENCES users(id));
