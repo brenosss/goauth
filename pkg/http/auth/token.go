@@ -1,28 +1,21 @@
 package http
 
 import (
+	entities "backend/pkg/database/entities"
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-type Token struct {
-	Id         int
-	Token      string
-	Created_at time.Time
-	User_id    int
-}
-
-func ValidateToken(token string) (*Token, error) {
+func ValidateToken(token string) (*entities.Token, error) {
 	// This needs to come from DB
-	validToken := Token{Id: 1, Token: "12345", Created_at: time.Now(), User_id: 1}
-	if token == validToken.Token {
-		return &validToken, nil
+	validToken := entities.GetToken(token)
+	if validToken.Id == 0 {
+		return nil, errors.New("invalid token")
 	}
-	return nil, errors.New("invalid token")
+	return &validToken, nil
 }
 
 func GetRequestToken(r *http.Request) (string, error) {
@@ -48,7 +41,7 @@ func TokenAuthMiddleware() gin.HandlerFunc {
 			if err != nil {
 				c.Set("user_id", nil)
 			} else {
-				c.Set("user_id", token.User_id)
+				c.Set("user_id", token.UserId)
 			}
 		}
 		c.Next()

@@ -6,15 +6,28 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"strings"
+	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const migrationDirName = "migrations"
+
 //go:embed migrations/*
 var embedMigrations embed.FS
 
-const migrationDirName = "migrations"
+const queriesDirName = "queries"
+
+//go:embed queries/*
+var embedQueries embed.FS
+
+func GetQuery(queryName string) string {
+	sqlFile, err := embedQueries.ReadFile(queriesDirName + "/" + queryName)
+	if err != nil {
+		panic(err)
+	}
+	return string(sqlFile)
+}
 
 func GetMigrations() []fs.DirEntry {
 	fileMigrations, err := embedMigrations.ReadDir(migrationDirName)
@@ -37,22 +50,30 @@ func ApplyMigrations() {
 		if err != nil {
 			panic(err)
 		}
-		sqlStatements := strings.Split(string(sqlFile), "\n")
-		for _, sqlStatement := range sqlStatements {
-			fmt.Println("SQL:", string(sqlStatement))
-			_, err := conn.Exec(string(sqlFile))
-			if err != nil {
-				panic(err)
-			}
+		_, err = conn.Exec(string(sqlFile))
+		if err != nil {
+			panic(err)
 		}
 	}
 	conn.Close()
 }
 
 func GetConnection() *sql.DB {
-	db, err := sql.Open("sqlite3", "./sqlite/"+config.GetConfig().DatabaseName)
+	dbPath := "/sqlite/" + config.GetConfig().DatabaseName
+	db, err := sql.Open("sqlite3", config.GetProjectDir()+dbPath)
 	if err != nil {
 		panic(err)
 	}
 	return db
+}
+
+func ClearDatabase() {
+	if config.GetConfig().Env != "test" {
+		panic("You can only clear the database in test environment")
+	}
+	dbPath := "/sqlite/" + config.GetConfig().DatabaseName
+	err := os.Remove(config.GetProjectDir() + dbPath)
+	if err != nil {
+		panic(err)
+	}
 }

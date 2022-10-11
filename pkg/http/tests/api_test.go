@@ -2,6 +2,8 @@ package http
 
 import (
 	"backend/pkg/config"
+	db "backend/pkg/database"
+	entities "backend/pkg/database/entities"
 	http "backend/pkg/http"
 	netHttp "net/http"
 	"net/http/httptest"
@@ -13,11 +15,14 @@ import (
 
 func TestMain(m *testing.M) {
 	config.LoadEnv("test")
+	db.ClearDatabase()
+	db.ApplyMigrations()
 	os.Exit(m.Run())
 }
 
 func TestAuthenticationMiddleware(t *testing.T) {
 	t.Run("UserIsAuthenticated", func(t *testing.T) {
+		entities.CreateToken(&entities.Token{Content: "12345", UserId: 1})
 		router := http.SetupRouter()
 		w := httptest.NewRecorder()
 		req, _ := netHttp.NewRequest("GET", "/ping", nil)

@@ -1,15 +1,27 @@
 package http
 
 import (
+	"backend/pkg/config"
+	db "backend/pkg/database"
+	entities "backend/pkg/database/entities"
 	auth "backend/pkg/http/auth"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	uuid "github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMain(m *testing.M) {
+	config.LoadEnv("test")
+	db.ClearDatabase()
+	db.ApplyMigrations()
+	os.Exit(m.Run())
+}
 
 func ErrorContains(out error, want string) bool {
 	if out == nil {
@@ -23,9 +35,13 @@ func ErrorContains(out error, want string) bool {
 
 func TestValidateToken(t *testing.T) {
 	t.Run("ValidToken", func(t *testing.T) {
-		got, _ := auth.ValidateToken("12345")
-		want := "12345"
-		assert.Equal(t, want, got.Token)
+		content := uuid.NewString()
+		token := entities.Token{Content: content, UserId: 1}
+		entities.CreateToken(&token)
+
+		got, _ := auth.ValidateToken(content)
+		want := content
+		assert.Equal(t, want, got.Content)
 	})
 	t.Run("InvalidToken", func(t *testing.T) {
 		_, err := auth.ValidateToken("invalid")
@@ -68,14 +84,22 @@ func TestGetRequestToken(t *testing.T) {
 
 func TestTokenAuthMiddleware(t *testing.T) {
 	t.Run("AddUserToContext", func(t *testing.T) {
+		// DB setup
+		tokenContent := uuid.NewString()
+		token := entities.Token{Content: tokenContent, UserId: 10}
+		entities.CreateToken(&token)
+
+		// Request setup
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.Header.Set("Authorization", "Bearer 12345")
+		req.Header.Set("Authorization", "Bearer "+tokenContent)
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = req
 		auth.TokenAuthMiddleware()(c)
+
+		// Assert
 		got, _ := c.Get("user_id")
-		assert.Equal(t, 1, got)
+		assert.Equal(t, 10, got)
 	})
 
 	t.Run("InvalidToken", func(t *testing.T) {

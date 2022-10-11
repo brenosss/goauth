@@ -1,0 +1,1 @@
+SELECT * FROM tokens WHERE content = $1

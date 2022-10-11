@@ -1,0 +1,1 @@
+INSERT INTO tokens (content, user_id) VALUES ($1, $2) RETURNING *;
